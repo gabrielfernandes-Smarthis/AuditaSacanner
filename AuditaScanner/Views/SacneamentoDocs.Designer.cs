@@ -33,6 +33,7 @@
             comboBox1 = new ComboBox();
             tipoDocCb = new ComboBox();
             btnNovoScan = new Button();
+            btnReload = new Button();
             btnLocalTemp = new Button();
             nomeArquivo = new TextBox();
             localTemp = new TextBox();
@@ -62,6 +63,7 @@
             groupBox1.Controls.Add(comboBox1);
             groupBox1.Controls.Add(tipoDocCb);
             groupBox1.Controls.Add(btnNovoScan);
+            groupBox1.Controls.Add(btnReload);
             groupBox1.Controls.Add(btnLocalTemp);
             groupBox1.Controls.Add(nomeArquivo);
             groupBox1.Controls.Add(localTemp);
@@ -109,7 +111,18 @@
             btnNovoScan.TabIndex = 4;
             btnNovoScan.Text = "Novo escaneamento";
             btnNovoScan.UseVisualStyleBackColor = true;
-            btnNovoScan.Click += btnNovoScan_Click;
+            btnNovoScan.Click += BtnNovoScan_Click;
+            // 
+            // btnReload
+            // 
+            btnReload.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            btnReload.Location = new Point(231, 16);
+            btnReload.Name = "btnReload";
+            btnReload.Size = new Size(151, 22);
+            btnReload.TabIndex = 3;
+            btnReload.Text = "Recarregar scanners";
+            btnReload.UseVisualStyleBackColor = true;
+            btnReload.Click += btnReload_Click;
             // 
             // btnLocalTemp
             // 
@@ -156,6 +169,7 @@
             listBox1.Name = "listBox1";
             listBox1.Size = new Size(376, 76);
             listBox1.TabIndex = 1;
+            listBox1.SelectedIndexChanged += listBox1_SelectedIndexChanged;
             // 
             // label6
             // 
@@ -262,5 +276,6 @@
         private ComboBox comboBox1;
         private Label label6;
         private Label label7;
+        private Button btnReload;
     }
 }

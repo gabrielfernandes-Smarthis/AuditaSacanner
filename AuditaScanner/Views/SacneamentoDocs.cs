@@ -4,19 +4,249 @@ using AuditaScanner.Controllers.ScannerControllers;
 using AuditaScanner.Controllers.TipoDocumentoControllers;
 using AuditaScanner.Models;
 using AuditaScanner.Models.TipoDocumentoModels;
+using System.Drawing.Imaging;
 using System.Net.Http.Headers;
+using System.Reflection;
+using System.Windows.Forms;
 using WIA;
 
 public partial class SacneamentoDocs : Form
 {
     public string CnpjPrestadora { get; set; }
     public int IdPrestadora { get; set; }
+
+    ImageCodecInfo _tiffCodecInfo;
+    TwainSession _twain;
+    bool _stopScan;
+    bool _loadingCaps;
+
     public SacneamentoDocs()
     {
         InitializeComponent();
 
+        if (NTwain.PlatformInfo.Current.IsApp64Bit)
+        {
+            Text = Text + " (64bit)";
+        }
+        else
+        {
+            Text = Text + " (32bit)";
+        }
+        foreach (var enc in ImageCodecInfo.GetImageEncoders())
+        {
+            if (enc.MimeType == "image/tiff") { _tiffCodecInfo = enc; break; }
+        }
+
         numeroAtendimento.LostFocus += IdEntered;
         AddTipoDocComboBox();
+
+        SetupTwain();
+        btnNovoScan.Enabled = false;
+    }
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        SetupTwain();
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (_twain != null)
+        {
+            if (e.CloseReason == CloseReason.UserClosing && _twain.State > 4)
+            {
+                e.Cancel = true;
+            }
+            else
+            {
+                CleanupTwain();
+            }
+        }
+        base.OnFormClosing(e);
+    }
+
+    private void SetupTwain()
+    {
+        var appId = TWIdentity.CreateFromAssembly(DataGroups.Image, Assembly.GetEntryAssembly());
+        _twain = new TwainSession(appId);
+        _twain.StateChanged += (s, e) =>
+        {
+            PlatformInfo.Current.Log.Info("State changed to " + _twain.State + " on thread " + Thread.CurrentThread.ManagedThreadId);
+        };
+        _twain.TransferError += (s, e) =>
+        {
+            PlatformInfo.Current.Log.Info("Got xfer error on thread " + Thread.CurrentThread.ManagedThreadId);
+        };
+        _twain.DataTransferred += (s, e) =>
+        {
+            PlatformInfo.Current.Log.Info("Transferred data event on thread " + Thread.CurrentThread.ManagedThreadId);
+
+            // example on getting ext image info
+            var infos = e.GetExtImageInfo(ExtendedImageInfo.Camera).Where(it => it.ReturnCode == ReturnCode.Success);
+            foreach (var it in infos)
+            {
+                var values = it.ReadValues();
+                PlatformInfo.Current.Log.Info(string.Format("{0} = {1}", it.InfoID, values.FirstOrDefault()));
+                break;
+            }
+
+            // handle image data
+            Image img = null;
+            if (e.NativeData != IntPtr.Zero)
+            {
+                var stream = e.GetNativeImageStream();
+                if (stream != null)
+                {
+                    img = Image.FromStream(stream);
+                }
+            }
+            else if (!string.IsNullOrEmpty(e.FileDataPath))
+            {
+                img = new Bitmap(e.FileDataPath);
+            }
+            if (img != null)
+            {
+                this.BeginInvoke(new Action(() =>
+                {
+                    string tempPath = localTemp.Text;
+                    string fileName = GerarNomeArquivo();
+
+                    //switch (comboBox1.Items)
+                    //{
+                    //    case 1:
+                    //        ImageFormat format = ImageFormat.Tiff;
+                    //        break;
+                    //    case 2:
+                             
+                    //    default:
+                    //        break;
+                    //}
+
+                    if (visualizarScan.Image != null)
+                    {
+                        visualizarScan.Image.Dispose();
+                        visualizarScan.Image = null;
+                    }
+                    visualizarScan.Image = img;
+                }));
+            }
+        };
+        _twain.SourceDisabled += (s, e) =>
+        {
+            PlatformInfo.Current.Log.Info("Source disabled event on thread " + Thread.CurrentThread.ManagedThreadId);
+            this.BeginInvoke(new Action(() =>
+            {
+                //btnStopScan.Enabled = false;
+                btnNovoScan.Enabled = true;
+                //LoadSourceCaps();
+            }));
+        };
+        _twain.TransferReady += (s, e) =>
+        {
+            PlatformInfo.Current.Log.Info("Transferr ready event on thread " + Thread.CurrentThread.ManagedThreadId);
+            e.CancelAll = _stopScan;
+        };
+
+        // either set sync context and don't worry about threads during events,
+        // or don't and use control.invoke during the events yourself
+        PlatformInfo.Current.Log.Info("Setup thread = " + Thread.CurrentThread.ManagedThreadId);
+        _twain.SynchronizationContext = SynchronizationContext.Current;
+        if (_twain.State < 3)
+        {
+            // use this for internal msg loop
+            _twain.Open();
+            // use this to hook into current app loop
+            //_twain.Open(new WindowsFormsMessageLoopHook(this.Handle));
+        }
+    }
+
+    private void CleanupTwain()
+    {
+        if (_twain.State == 4)
+        {
+            _twain.CurrentSource.Close();
+        }
+        if (_twain.State == 3)
+        {
+            _twain.Close();
+        }
+
+        if (_twain.State > 2)
+        {
+            // normal close down didn't work, do hard kill
+            _twain.ForceStepDown(2);
+        }
+    }
+
+    private void btnReload_Click(object sender, EventArgs e)
+    {
+        ListarScanners();
+    }
+
+    private void ListarScanners()
+    {
+        if (_twain.State >= 3)
+        {
+            listBox1.Items.Clear();
+
+            foreach (var src in _twain)
+            {
+                listBox1.Items.Add(src.Name);
+            }
+        }
+    }
+
+    private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        if (listBox1.SelectedIndex >= 0)
+        {
+            string selectedScannerName = listBox1.SelectedItem.ToString();
+            SelectScannerByName(selectedScannerName);
+        }
+    }
+
+    private void SelectScannerByName(string scannerName)
+    {
+        if (_twain.State > 4) { return; }
+
+        if (_twain.State == 4) { _twain.CurrentSource.Close(); }
+
+        var selectedSource = _twain.FirstOrDefault(src => src.Name == scannerName);
+
+        if (selectedSource != null && selectedSource.Open() == ReturnCode.Success)
+        {
+            btnNovoScan.Enabled = true;
+        }
+    }
+    private void SacneamentoDocs_Load(object sender, EventArgs e)
+    {
+        ListarScanners();
+    }
+
+    private void BtnNovoScan_Click(object sender, EventArgs e)
+    {
+        Scanear();
+    }
+
+    public void Scanear()
+    {
+        MessageBox.Show(_twain.State.ToString());
+        if (_twain.State == 4)
+        {
+            _stopScan = false;
+
+            if (_twain.CurrentSource.Capabilities.CapUIControllable.IsSupported)
+            {
+                // Ocultar a interface do usuário do scanner, se possível
+                _twain.CurrentSource.Enable(SourceEnableMode.NoUI, false, this.Handle);
+            }
+            else
+            {
+                // Mostrar a interface do usuário do scanner
+                _twain.CurrentSource.Enable(SourceEnableMode.ShowUI, true, this.Handle);
+            }
+        }
     }
 
     private async void AddTipoDocComboBox()
@@ -43,87 +273,6 @@ public partial class SacneamentoDocs : Form
         }
     }
 
-    private void ListarScanners()
-    {
-        listBox1.Items.Clear();
-        var deviceManager = new DeviceManager();
-        int count = deviceManager.DeviceInfos.Count;
-
-        for (int i = 1; i <= count; i++)
-        {
-            if (deviceManager.DeviceInfos[i].Type == WiaDeviceType.ScannerDeviceType)
-            {
-                listBox1.Items.Add(
-                    new Scanner(deviceManager.DeviceInfos[i])
-                );
-            }
-        }
-    }
-
-    private void SacneamentoDocs_Load(object sender, EventArgs e)
-    {
-        ListarScanners();
-    }
-
-    public void Scanear()
-    {
-        Scanner device = null;
-
-        this.Invoke(new MethodInvoker(delegate ()
-        {
-            device = listBox1.SelectedItem as Scanner;
-            if (device == null)
-            {
-                MessageBox.Show("Selcione um scanner antes de começar a scanear",
-                                "warning",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Warning);
-            }
-            else
-            {
-                ImageFile image = new ImageFile();
-                string imageExtension = "";
-
-                switch (comboBox1.SelectedIndex)
-                {
-                    case 0:
-                        image = device.ScanearDocumento(WIA.FormatID.wiaFormatPNG);
-                        imageExtension = ".png";
-                        break;
-                    case 1:
-                        image = device.ScanearDocumento(WIA.FormatID.wiaFormatJPEG);
-                        imageExtension = ".jpeg";
-                        break;
-                    case 2:
-                        image = device.ScanearDocumento(WIA.FormatID.wiaFormatBMP);
-                        imageExtension = ".bmp";
-                        break;
-                    case 3:
-                        image = device.ScanearDocumento(WIA.FormatID.wiaFormatGIF);
-                        imageExtension = ".gif";
-                        break;
-                    case 4:
-                        image = device.ScanearDocumento(WIA.FormatID.wiaFormatTIFF);
-                        imageExtension = ".tiff";
-                        break;
-                    case 5:
-                        image = device.ScanearDocumento(WIA.FormatID.wiaFormatJPEG);
-                        imageExtension = ".jpeg";
-                        break;
-                }
-                string local = Path.Combine(localTemp.Text, GerarNomeArquivo() + imageExtension);
-                PDFController pdf = new PDFController(localTemp.Text, GerarNomeArquivo());
-                if (File.Exists(local))
-                    File.Delete(local);
-
-                image.SaveFile(local);
-                pdf.GerarPDF(local);
-                visualizarScan.SizeMode = PictureBoxSizeMode.StretchImage;
-                visualizarScan.Image = Image.FromFile(local);
-            }
-        }));
-    }
-
     private string GerarNomeArquivo()
     {
         string NomeArquivo = IdPrestadora + "-" + numeroAtendimento.Text;
@@ -133,11 +282,6 @@ public partial class SacneamentoDocs : Form
     private void IdEntered(object sender, EventArgs e)
     {
         nomeArquivo.Text = GerarNomeArquivo();
-    }
-
-    private void btnNovoScan_Click(object sender, EventArgs e)
-    {
-        Task.Factory.StartNew(Scanear).ContinueWith(result => MessageBox.Show("Scan concluído"));
     }
 
     private void btnLocalTemp_Click(object sender, EventArgs e)
