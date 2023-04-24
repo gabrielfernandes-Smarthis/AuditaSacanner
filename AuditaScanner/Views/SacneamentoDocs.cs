@@ -6,8 +6,11 @@ using AuditaScanner.Models;
 using AuditaScanner.Models.TipoDocumentoModels;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Windows.Forms;
+using TwainScanning.Capability.CapabilitySets;
+using TwainScanning.NativeStructs;
 using WIA;
 
 public partial class SacneamentoDocs : Form
@@ -112,22 +115,42 @@ public partial class SacneamentoDocs : Form
                     string tempPath = localTemp.Text;
                     string fileName = GerarNomeArquivo();
 
-                    //switch (comboBox1.Items)
-                    //{
-                    //    case 1:
-                    //        ImageFormat format = ImageFormat.Tiff;
-                    //        break;
-                    //    case 2:
-                             
-                    //    default:
-                    //        break;
-                    //}
+                    ImageFormat format = null;
+                    switch (comboBox1.SelectedIndex)
+                    {
+                        case 0:
+                            format = ImageFormat.Png;
+                            break;
+                        case 1:
+                            format = ImageFormat.Jpeg;
+                            break;
+                        case 2:
+                            format = ImageFormat.Bmp;
+                            break;
+                        case 3:
+                            format = ImageFormat.Gif;
+                            break;
+                        case 4:
+                            format = ImageFormat.Tiff;
+                            break;
+                        default:
+                            break;
+                    }
+                    if (format == null)
+                    {
+                        MessageBox.Show("Formato de imagem não selecionado. O escaneamento será interrompido.", "Formato inválido", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        _stopScan = true;
+                        return;
+                    }
 
+                    string path = Path.Combine($"{tempPath}\\{fileName}.{format.ToString().ToLower()}");
+                    img.Save(path, format);
                     if (visualizarScan.Image != null)
                     {
                         visualizarScan.Image.Dispose();
                         visualizarScan.Image = null;
                     }
+                    visualizarScan.SizeMode = PictureBoxSizeMode.Zoom;
                     visualizarScan.Image = img;
                 }));
             }
@@ -137,7 +160,6 @@ public partial class SacneamentoDocs : Form
             PlatformInfo.Current.Log.Info("Source disabled event on thread " + Thread.CurrentThread.ManagedThreadId);
             this.BeginInvoke(new Action(() =>
             {
-                //btnStopScan.Enabled = false;
                 btnNovoScan.Enabled = true;
                 //LoadSourceCaps();
             }));
