@@ -17,9 +17,14 @@ public partial class SacneamentoDocs : Form
 {
     public string CnpjPrestadora { get; set; }
     public int IdPrestadora { get; set; }
+    private int _currentImage = 0;
+    private int _currentPage = 0;
+    private string path = string.Empty;
+    private string tempPath = string.Empty;
 
     ImageCodecInfo _tiffCodecInfo;
     TwainSession _twain;
+
     bool _stopScan;
     bool _loadingCaps;
 
@@ -95,63 +100,81 @@ public partial class SacneamentoDocs : Form
             }
 
             // handle image data
-            Image img = null;
+            IList<Image> images = null;
             if (e.NativeData != IntPtr.Zero)
             {
                 var stream = e.GetNativeImageStream();
                 if (stream != null)
                 {
-                    img = Image.FromStream(stream);
+                    images = new List<Image> { Image.FromStream(stream) };
                 }
             }
             else if (!string.IsNullOrEmpty(e.FileDataPath))
             {
-                img = new Bitmap(e.FileDataPath);
+                images = new List<Image> { new Bitmap(e.FileDataPath) };
             }
-            if (img != null)
+
+            if (images != null)
             {
                 this.BeginInvoke(new Action(() =>
                 {
-                    string tempPath = localTemp.Text;
-                    string fileName = GerarNomeArquivo();
+                    tempPath = localTemp.Text;
 
-                    ImageFormat format = null;
-                    switch (comboBox1.SelectedIndex)
+                    foreach (var img in images)
                     {
-                        case 0:
-                            format = ImageFormat.Png;
-                            break;
-                        case 1:
-                            format = ImageFormat.Jpeg;
-                            break;
-                        case 2:
-                            format = ImageFormat.Bmp;
-                            break;
-                        case 3:
-                            format = ImageFormat.Gif;
-                            break;
-                        case 4:
-                            format = ImageFormat.Tiff;
-                            break;
-                        default:
-                            break;
-                    }
-                    if (format == null)
-                    {
-                        MessageBox.Show("Formato de imagem não selecionado. O escaneamento será interrompido.", "Formato inválido", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        _stopScan = true;
-                        return;
+                        string fileName = GerarNomeArquivo(_currentPage % 2 == 0);
+                        _currentPage++;
+
+                        ImageFormat format = null;
+                        bool isPdf = false;
+                        switch (comboBox1.SelectedIndex)
+                        {
+                            case 0:
+                                format = ImageFormat.Png;
+                                break;
+                            case 1:
+                                format = ImageFormat.Jpeg;
+                                break;
+                            case 2:
+                                format = ImageFormat.Bmp;
+                                break;
+                            case 3:
+                                format = ImageFormat.Gif;
+                                break;
+                            case 4:
+                                format = ImageFormat.Tiff;
+                                break;
+                            case 5:
+                                isPdf = true;
+                                break;
+                            default:
+                                break;
+                        }
+                        if (format == null && !isPdf)
+                        {
+                            MessageBox.Show("Formato de imagem não selecionado. O escaneamento será interrompido.", "Formato inválido", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            _stopScan = true;
+                            return;
+                        }
+
+                        path = Path.Combine($"{tempPath}\\{fileName}.{format.ToString().ToLower()}");
+                        img.Save(path, format);
+
+                        if (isPdf)
+                        {
+                            PDFController pdf = new(localTemp.Text, GerarNomeArquivo(_currentPage % 2 == 0));
+                            pdf.GerarPDF(path);
+                        }
                     }
 
-                    string path = Path.Combine($"{tempPath}\\{fileName}.{format.ToString().ToLower()}");
-                    img.Save(path, format);
                     if (visualizarScan.Image != null)
                     {
                         visualizarScan.Image.Dispose();
                         visualizarScan.Image = null;
                     }
                     visualizarScan.SizeMode = PictureBoxSizeMode.Zoom;
-                    visualizarScan.Image = img;
+                    visualizarScan.Image = images.Last();
+                    _currentImage = 1;
                 }));
             }
         };
@@ -253,9 +276,12 @@ public partial class SacneamentoDocs : Form
 
     public void Scanear()
     {
-        MessageBox.Show(_twain.State.ToString());
         if (_twain.State == 4)
         {
+            if (_twain.CurrentSource.Capabilities.CapDuplex.IsSupported && chkDuplex.Checked)
+            {
+                _twain.CurrentSource.Capabilities.CapDuplexEnabled.SetValue(BoolType.True);
+            }
             _stopScan = false;
 
             if (_twain.CurrentSource.Capabilities.CapUIControllable.IsSupported)
@@ -271,7 +297,7 @@ public partial class SacneamentoDocs : Form
         }
     }
 
-    private async void AddTipoDocComboBox()
+    private async Task AddTipoDocComboBox()
     {
         try
         {
@@ -289,15 +315,39 @@ public partial class SacneamentoDocs : Form
             tipoDocCb.DisplayMember = "Nome";
             tipoDocCb.ValueMember = "Id";
         }
-        catch (Exception)
+        catch (HttpRequestException ex)
         {
-            throw;
+            // Handle the exception related to HttpClient
+            MessageBox.Show("Ocorreu um erro ao se comunicar com o servidor. Por favor, verifique sua conexão com a internet e tente novamente.");
+        }
+        catch (JsonException ex)
+        {
+            // Handle deserialization issues
+            MessageBox.Show("Ocorreu um erro ao processar a resposta do servidor. Por favor, tente novamente.");
+        }
+        catch (Exception ex)
+        {
+            // Handle any other exception
+            MessageBox.Show("Ocorreu um erro inesperado. Por favor, tente novamente.");
         }
     }
 
     private string GerarNomeArquivo()
     {
         string NomeArquivo = IdPrestadora + "-" + numeroAtendimento.Text;
+        return NomeArquivo;
+    }
+
+    private string GerarNomeArquivo(bool isFront)
+    {
+        string NomeArquivo = IdPrestadora + "-" + numeroAtendimento.Text;
+        if (chkDuplex.Checked)
+        {
+            if (isFront)
+                NomeArquivo += "-Frente";
+            else
+                NomeArquivo += "-Verso";
+        }
         return NomeArquivo;
     }
 
@@ -319,5 +369,14 @@ public partial class SacneamentoDocs : Form
     private void SacneamentoDocs_FormClosed(object sender, FormClosedEventArgs e)
     {
         Application.Exit();
+    }
+
+    private void vScrollBar1_Scroll(object sender, ScrollEventArgs e)
+    {
+        int nextImage = vScrollBar1.Value;
+        if (nextImage == _currentImage)
+            return;
+
+        _currentImage = nextImage;
     }
 }
