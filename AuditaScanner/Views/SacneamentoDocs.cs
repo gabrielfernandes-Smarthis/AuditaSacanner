@@ -2,17 +2,11 @@
 
 using AuditaScanner.Controllers.ScannerControllers;
 using AuditaScanner.Controllers.TipoDocumentoControllers;
-using AuditaScanner.Models;
 using AuditaScanner.Models.TipoDocumentoModels;
-using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
-using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Windows.Forms;
-using TwainScanning.Capability.CapabilitySets;
-using TwainScanning.NativeStructs;
-using WIA;
 
 public partial class SacneamentoDocs : Form
 {
