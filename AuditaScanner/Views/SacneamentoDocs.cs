@@ -4,6 +4,7 @@ using AuditaScanner.Controllers.ScannerControllers;
 using AuditaScanner.Controllers.TipoDocumentoControllers;
 using AuditaScanner.Models;
 using AuditaScanner.Models.TipoDocumentoModels;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
@@ -19,6 +20,7 @@ public partial class SacneamentoDocs : Form
     public int IdPrestadora { get; set; }
     private int _currentImage = 0;
     private int _currentPage = 0;
+    private ImageFormat format = null;
     private string path = string.Empty;
     private string tempPath = string.Empty;
 
@@ -50,6 +52,10 @@ public partial class SacneamentoDocs : Form
 
         SetupTwain();
         btnNovoScan.Enabled = false;
+
+        vScrollBar1.Enabled = false;
+
+        vScrollBar1.ValueChanged += vScrollBar1_ValueChanged;
     }
 
     protected override void OnHandleCreated(EventArgs e)
@@ -81,6 +87,8 @@ public partial class SacneamentoDocs : Form
         _twain.StateChanged += (s, e) =>
         {
             PlatformInfo.Current.Log.Info("State changed to " + _twain.State + " on thread " + Thread.CurrentThread.ManagedThreadId);
+            if (_twain.State == 7)
+                vScrollBar1.Enabled = true;
         };
         _twain.TransferError += (s, e) =>
         {
@@ -125,7 +133,6 @@ public partial class SacneamentoDocs : Form
                         string fileName = GerarNomeArquivo(_currentPage % 2 == 0);
                         _currentPage++;
 
-                        ImageFormat format = null;
                         bool isPdf = false;
                         switch (comboBox1.SelectedIndex)
                         {
@@ -146,6 +153,7 @@ public partial class SacneamentoDocs : Form
                                 break;
                             case 5:
                                 isPdf = true;
+                                format = ImageFormat.Png;
                                 break;
                             default:
                                 break;
@@ -174,7 +182,6 @@ public partial class SacneamentoDocs : Form
                     }
                     visualizarScan.SizeMode = PictureBoxSizeMode.Zoom;
                     visualizarScan.Image = images.Last();
-                    _currentImage = 1;
                 }));
             }
         };
@@ -371,12 +378,29 @@ public partial class SacneamentoDocs : Form
         Application.Exit();
     }
 
-    private void vScrollBar1_Scroll(object sender, ScrollEventArgs e)
+    private void vScrollBar1_ValueChanged(object sender, EventArgs e)
     {
-        int nextImage = vScrollBar1.Value;
-        if (nextImage == _currentImage)
-            return;
+        _currentImage++;
 
-        _currentImage = nextImage;
+        string fileName = GerarNomeArquivo(_currentImage % 2 == 0);
+        path = Path.Combine($"{tempPath}\\{fileName}.{format.ToString().ToLower()}");
+        if (File.Exists(path))
+        {
+            try
+            {
+                using (Image imagem = Image.FromFile(path))
+                {
+                    visualizarScan.Image = new Bitmap(imagem);
+                } 
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erro ao carregar a imagem: " + ex.Message);
+            }
+        }
+        else
+        {
+            MessageBox.Show("Arquivo não encontrado");
+        }
     }
 }

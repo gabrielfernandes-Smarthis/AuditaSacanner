@@ -256,15 +256,14 @@
             // 
             // vScrollBar1
             // 
-            vScrollBar1.LargeChange = 2;
-            vScrollBar1.Location = new Point(566, 6);
+            vScrollBar1.LargeChange = 1;
+            vScrollBar1.Location = new Point(566, 9);
             vScrollBar1.Maximum = 2;
             vScrollBar1.Minimum = 1;
             vScrollBar1.Name = "vScrollBar1";
             vScrollBar1.Size = new Size(13, 637);
             vScrollBar1.TabIndex = 3;
             vScrollBar1.Value = 1;
-            vScrollBar1.Scroll += vScrollBar1_Scroll;
             // 
             // SacneamentoDocs
             // 
