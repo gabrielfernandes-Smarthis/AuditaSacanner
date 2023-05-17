@@ -55,7 +55,6 @@ public partial class Login : Form
         }
         catch (Exception)
         {
-
             throw;
         }
     }
@@ -90,7 +89,7 @@ public partial class Login : Form
             string bearerToken = Constants.LoginBearerToken;
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
             //Add the token
-            httpClient.DefaultRequestHeaders.Add("token", Constants.LoginToken);
+            httpClient.DefaultRequestHeaders.Add("token", Constants.HeaderToken);
 
             LoginController login = new LoginController(httpClient);
 
