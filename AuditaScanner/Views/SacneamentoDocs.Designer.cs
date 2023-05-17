@@ -101,7 +101,7 @@
             // 
             comboBox1.Font = new Font("Rubik", 12F, FontStyle.Regular, GraphicsUnit.Point);
             comboBox1.FormattingEnabled = true;
-            comboBox1.Items.AddRange(new object[] { "PNG", "JPEG", "BMP", "GIF", "TIFF", "PDF" });
+            comboBox1.Items.AddRange(new object[] { "PDF", "JPEG", "BMP", "GIF", "TIFF", "PNG" });
             comboBox1.Location = new Point(216, 178);
             comboBox1.Name = "comboBox1";
             comboBox1.Size = new Size(151, 27);
