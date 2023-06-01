@@ -32,7 +32,7 @@
             senhaLabel = new Label();
             auditaLabel = new Label();
             loginBtn = new Button();
-            cnpjLabel = new Label();
+            prestadoraLabel = new Label();
             loginTxt = new MaskedTextBox();
             senhaTxt = new MaskedTextBox();
             prestadorasCb = new ComboBox();
@@ -71,7 +71,7 @@
             // loginBtn
             // 
             loginBtn.Font = new Font("Rubik", 14.25F, FontStyle.Regular, GraphicsUnit.Point);
-            loginBtn.Location = new Point(292, 374);
+            loginBtn.Location = new Point(292, 394);
             loginBtn.Name = "loginBtn";
             loginBtn.Size = new Size(69, 32);
             loginBtn.TabIndex = 3;
@@ -79,15 +79,15 @@
             loginBtn.UseVisualStyleBackColor = true;
             loginBtn.Click += loginBtn_Click;
             // 
-            // cnpjLabel
+            // prestadoraLabel
             // 
-            cnpjLabel.AutoSize = true;
-            cnpjLabel.Font = new Font("Segoe Fluent Icons", 15.75F, FontStyle.Regular, GraphicsUnit.Point);
-            cnpjLabel.Location = new Point(153, 302);
-            cnpjLabel.Name = "cnpjLabel";
-            cnpjLabel.Size = new Size(83, 21);
-            cnpjLabel.TabIndex = 1;
-            cnpjLabel.Text = "Prestadora";
+            prestadoraLabel.AutoSize = true;
+            prestadoraLabel.Font = new Font("Segoe Fluent Icons", 15.75F, FontStyle.Regular, GraphicsUnit.Point);
+            prestadoraLabel.Location = new Point(153, 302);
+            prestadoraLabel.Name = "prestadoraLabel";
+            prestadoraLabel.Size = new Size(83, 21);
+            prestadoraLabel.TabIndex = 1;
+            prestadoraLabel.Text = "Prestadora";
             // 
             // loginTxt
             // 
@@ -115,6 +115,7 @@
             prestadorasCb.Name = "prestadorasCb";
             prestadorasCb.Size = new Size(208, 27);
             prestadorasCb.TabIndex = 5;
+            prestadorasCb.SelectedIndexChanged += prestadorasCb_SelectedIndexChanged;
             // 
             // Login
             // 
@@ -126,11 +127,12 @@
             Controls.Add(loginTxt);
             Controls.Add(loginBtn);
             Controls.Add(auditaLabel);
-            Controls.Add(cnpjLabel);
+            Controls.Add(prestadoraLabel);
             Controls.Add(senhaLabel);
             Controls.Add(loginLabel);
             Name = "Login";
             Text = "Scanner Audita";
+            Load += Login_Load;
             ResumeLayout(false);
             PerformLayout();
         }
@@ -141,7 +143,7 @@
         private Label senhaLabel;
         private Label auditaLabel;
         private Button loginBtn;
-        private Label cnpjLabel;
+        private Label prestadoraLabel;
         private MaskedTextBox loginTxt;
         private MaskedTextBox senhaTxt;
         private ComboBox prestadorasCb;

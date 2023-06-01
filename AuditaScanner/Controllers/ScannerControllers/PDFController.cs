@@ -20,16 +20,17 @@ public class PdfController
         _name = name;
     }
 
-    public void GerarPDF(string imagePath)
+    public string GerarPDF(string imagePath)
     {
         string pdfPath = _path + "\\" + _name + ".pdf";
         _pdfWriter = new PdfWriter(pdfPath);
         _doc = new Document(new PdfDocument(_pdfWriter));
         AdicionarImagem(imagePath);
         _doc.Close();
+        return pdfPath;
     }
 
-    public void GerarPDF(string frentePath, string trasPath)
+    public string GerarPDF(string frentePath, string trasPath)
     {
         string pdfPath = _path + "\\" + _name + ".pdf";
         _pdfWriter = new PdfWriter(pdfPath);
@@ -37,6 +38,7 @@ public class PdfController
         AdicionarImagem(frentePath);
         AdicionarImagem(trasPath);
         _doc.Close();
+        return pdfPath;
     }
 
     public void AdicionarImagem(string imagePath)

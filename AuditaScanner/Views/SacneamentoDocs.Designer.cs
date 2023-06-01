@@ -30,6 +30,8 @@
         {
             visualizarScan = new PictureBox();
             groupBox1 = new GroupBox();
+            rbPedido = new RadioButton();
+            rbAtendimento = new RadioButton();
             chkDuplex = new CheckBox();
             comboBox1 = new ComboBox();
             tipoDocCb = new ComboBox();
@@ -62,6 +64,8 @@
             // 
             // groupBox1
             // 
+            groupBox1.Controls.Add(rbPedido);
+            groupBox1.Controls.Add(rbAtendimento);
             groupBox1.Controls.Add(chkDuplex);
             groupBox1.Controls.Add(comboBox1);
             groupBox1.Controls.Add(tipoDocCb);
@@ -86,11 +90,35 @@
             groupBox1.TabStop = false;
             groupBox1.Text = "Opções";
             // 
+            // rbPedido
+            // 
+            rbPedido.AutoSize = true;
+            rbPedido.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            rbPedido.Location = new Point(231, 223);
+            rbPedido.Name = "rbPedido";
+            rbPedido.Size = new Size(67, 19);
+            rbPedido.TabIndex = 8;
+            rbPedido.TabStop = true;
+            rbPedido.Text = "Pedido";
+            rbPedido.UseVisualStyleBackColor = true;
+            // 
+            // rbAtendimento
+            // 
+            rbAtendimento.AutoSize = true;
+            rbAtendimento.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
+            rbAtendimento.Location = new Point(112, 223);
+            rbAtendimento.Name = "rbAtendimento";
+            rbAtendimento.Size = new Size(105, 19);
+            rbAtendimento.TabIndex = 7;
+            rbAtendimento.TabStop = true;
+            rbAtendimento.Text = "Atendimento";
+            rbAtendimento.UseVisualStyleBackColor = true;
+            // 
             // chkDuplex
             // 
             chkDuplex.AutoSize = true;
             chkDuplex.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            chkDuplex.Location = new Point(373, 183);
+            chkDuplex.Location = new Point(393, 181);
             chkDuplex.Name = "chkDuplex";
             chkDuplex.Size = new Size(68, 19);
             chkDuplex.TabIndex = 6;
@@ -102,7 +130,7 @@
             comboBox1.Font = new Font("Rubik", 12F, FontStyle.Regular, GraphicsUnit.Point);
             comboBox1.FormattingEnabled = true;
             comboBox1.Items.AddRange(new object[] { "PDF", "JPEG", "BMP", "GIF", "TIFF", "PNG" });
-            comboBox1.Location = new Point(216, 178);
+            comboBox1.Location = new Point(231, 178);
             comboBox1.Name = "comboBox1";
             comboBox1.Size = new Size(151, 27);
             comboBox1.TabIndex = 5;
@@ -111,7 +139,7 @@
             // 
             tipoDocCb.Font = new Font("Rubik", 12F, FontStyle.Regular, GraphicsUnit.Point);
             tipoDocCb.FormattingEnabled = true;
-            tipoDocCb.Location = new Point(6, 178);
+            tipoDocCb.Location = new Point(22, 178);
             tipoDocCb.Name = "tipoDocCb";
             tipoDocCb.Size = new Size(191, 27);
             tipoDocCb.TabIndex = 5;
@@ -130,7 +158,7 @@
             // btnReload
             // 
             btnReload.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            btnReload.Location = new Point(216, 24);
+            btnReload.Location = new Point(266, 27);
             btnReload.Name = "btnReload";
             btnReload.Size = new Size(143, 27);
             btnReload.TabIndex = 3;
@@ -141,7 +169,7 @@
             // btnLocalTemp
             // 
             btnLocalTemp.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            btnLocalTemp.Location = new Point(313, 297);
+            btnLocalTemp.Location = new Point(333, 338);
             btnLocalTemp.Name = "btnLocalTemp";
             btnLocalTemp.Size = new Size(123, 25);
             btnLocalTemp.TabIndex = 3;
@@ -152,7 +180,7 @@
             // nomeArquivo
             // 
             nomeArquivo.Font = new Font("Rubik", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            nomeArquivo.Location = new Point(197, 235);
+            nomeArquivo.Location = new Point(217, 276);
             nomeArquivo.Name = "nomeArquivo";
             nomeArquivo.ReadOnly = true;
             nomeArquivo.Size = new Size(239, 26);
@@ -161,7 +189,7 @@
             // localTemp
             // 
             localTemp.Font = new Font("Rubik", 11.25F, FontStyle.Regular, GraphicsUnit.Point);
-            localTemp.Location = new Point(6, 297);
+            localTemp.Location = new Point(22, 338);
             localTemp.Name = "localTemp";
             localTemp.Size = new Size(301, 25);
             localTemp.TabIndex = 2;
@@ -169,7 +197,7 @@
             // numeroAtendimento
             // 
             numeroAtendimento.Font = new Font("Rubik", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            numeroAtendimento.Location = new Point(6, 235);
+            numeroAtendimento.Location = new Point(22, 276);
             numeroAtendimento.Name = "numeroAtendimento";
             numeroAtendimento.Size = new Size(170, 26);
             numeroAtendimento.TabIndex = 2;
@@ -179,7 +207,7 @@
             listBox1.Font = new Font("Rubik", 11.25F, FontStyle.Regular, GraphicsUnit.Point);
             listBox1.FormattingEnabled = true;
             listBox1.ItemHeight = 18;
-            listBox1.Location = new Point(6, 54);
+            listBox1.Location = new Point(56, 57);
             listBox1.Name = "listBox1";
             listBox1.Size = new Size(353, 76);
             listBox1.TabIndex = 1;
@@ -198,7 +226,7 @@
             // 
             label3.AutoSize = true;
             label3.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            label3.Location = new Point(197, 217);
+            label3.Location = new Point(217, 258);
             label3.Name = "label3";
             label3.Size = new Size(114, 15);
             label3.TabIndex = 0;
@@ -208,7 +236,7 @@
             // 
             label7.AutoSize = true;
             label7.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            label7.Location = new Point(216, 160);
+            label7.Location = new Point(228, 160);
             label7.Name = "label7";
             label7.Size = new Size(63, 15);
             label7.TabIndex = 0;
@@ -218,7 +246,7 @@
             // 
             label5.AutoSize = true;
             label5.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            label5.Location = new Point(6, 160);
+            label5.Location = new Point(22, 160);
             label5.Name = "label5";
             label5.Size = new Size(129, 15);
             label5.TabIndex = 0;
@@ -228,7 +256,7 @@
             // 
             label4.AutoSize = true;
             label4.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            label4.Location = new Point(6, 279);
+            label4.Location = new Point(22, 320);
             label4.Name = "label4";
             label4.Size = new Size(207, 15);
             label4.TabIndex = 0;
@@ -238,7 +266,7 @@
             // 
             label2.AutoSize = true;
             label2.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            label2.Location = new Point(6, 217);
+            label2.Location = new Point(22, 258);
             label2.Name = "label2";
             label2.Size = new Size(142, 15);
             label2.TabIndex = 0;
@@ -248,7 +276,7 @@
             // 
             label1.AutoSize = true;
             label1.Font = new Font("Rubik", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            label1.Location = new Point(6, 27);
+            label1.Location = new Point(56, 27);
             label1.Name = "label1";
             label1.Size = new Size(161, 19);
             label1.TabIndex = 0;
@@ -276,7 +304,7 @@
             Name = "SacneamentoDocs";
             Text = "Scanner Audita";
             FormClosed += SacneamentoDocs_FormClosed;
-            Load += SacneamentoDocs_Load;
+            Load += SacneamentoDocs_LoadAsync;
             ((System.ComponentModel.ISupportInitialize)visualizarScan).EndInit();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
@@ -305,5 +333,7 @@
         private Button btnReload;
         private CheckBox chkDuplex;
         private VScrollBar vScrollBar1;
+        private RadioButton rbPedido;
+        private RadioButton rbAtendimento;
     }
 }

@@ -5,18 +5,31 @@ using AuditaScanner.Controllers.ScannerControllers;
 using AuditaScanner.Controllers.TipoDocumentoControllers;
 using AuditaScanner.Models.PedidosExameModels;
 using AuditaScanner.Models.TipoDocumentoModels;
-using iText.StyledXmlParser.Jsoup.Parser;
+using AuditaScanner.Models.UploadModels;
+using AuditaScanner.Services;
 using System.Drawing.Imaging;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Windows.Forms;
 
 public partial class SacneamentoDocs : Form
 {
-    public string CnpjPrestadora { get; set; }
-    public int IdPrestadora { get; set; }
+    public string UserCpf { get; set; }
+    public string UserEmail { get; set; }
+    public string UserName { get; set; }
+    public string UserNickname { get; set; }
+    public string UserPassword { get; set; }
+    public string NomePaciente { get; set; }
+
+    public string AppToken { get; set; }
+
     public List<string> DocNumber { get; set; }
     public List<string> DocCode { get; set; }
+
+    public string FrentePath { get; set; }
+    public string VersoPath { get; set; }
+    public string PdfPath { get; set; }
 
     private int _currentImage = 0;
     private int _currentPage = 0;
@@ -53,7 +66,6 @@ public partial class SacneamentoDocs : Form
         }
 
         numeroAtendimento.LostFocus += IdEntered;
-        AddTipoDocComboBox();
 
         SetupTwain();
         btnNovoScan.Enabled = false;
@@ -209,6 +221,50 @@ public partial class SacneamentoDocs : Form
 
                 _currentPage = 0;
                 btnNovoScan.Enabled = true;
+
+                var extensao = Path.GetExtension(PdfPath);
+                var nomeArquivo = Path.GetFileNameWithoutExtension(PdfPath);
+                var base64 = FileToBase64(PdfPath);
+                UploadBodyModel uploadBody = new UploadBodyModel
+                {
+                    Files = new List<FileModel>
+                    {
+                        new FileModel
+                        {
+                            Extension = extensao,
+                            FileHash = base64,
+                            Name = nomeArquivo,
+                            PedidoExameId = Int32.Parse(numeroAtendimento.Text),
+                            ProcedureId = null,
+                            AtendimentoId = null,
+                            FileTypeId = 1,
+                            Paciente = NomePaciente
+                        }
+                    },
+                    Sender = new SenderModel
+                    {
+                        Cpf = UserCpf,
+                        Email = UserEmail,
+                        Name = UserName,
+                        Nickname = UserNickname,
+                        Password = UserPassword
+                    }
+                };
+
+                UploadArquivos upload = new UploadArquivos(uploadBody, AppToken);
+
+                if (await upload.UploadArquivo())
+                {
+                    if (chkDuplex.Checked)
+                        File.Delete(VersoPath);
+
+                    File.Delete(FrentePath);
+                    File.Delete(PdfPath);
+                }
+                else
+                {
+                    MessageBox.Show("Erro ao enviar arquivo para o servidor. Tente novamente.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }));
         };
         _twain.TransferReady += (s, e) =>
@@ -230,27 +286,53 @@ public partial class SacneamentoDocs : Form
         }
     }
 
+    public string GetMd5Hash(string senha)
+    {
+        MD5 md5Hash = MD5.Create();
+        // Converte a entrada para um array de bytes e calcula o hash.
+        byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(senha));
+
+        // Cria um novo Stringbuilder para coletar os bytes
+        // e criar uma string.
+        StringBuilder sBuilder = new StringBuilder();
+
+        // Loop por cada byte e formata como uma string hexadecimal
+        for (int i = 0; i < data.Length; i++)
+        {
+            sBuilder.Append(data[i].ToString("x2"));
+        }
+
+        // Retorna o hash como uma string
+        return sBuilder.ToString();
+    }
+
+    public string FileToBase64(string path)
+    {
+        byte[] bytes = File.ReadAllBytes(path);
+        return Convert.ToBase64String(bytes);
+    }
+
     private async Task PdfDuplex()
     {
         string front = await GerarNomeArquivoAsync(true);
-        var frotPath = Path.Combine($"{tempPath}\\{front}.{format.ToString().ToLower()}");
+        FrentePath = Path.Combine($"{tempPath}\\{front}.{format.ToString().ToLower()}");
 
         string back = await GerarNomeArquivoAsync(false);
-        var backPath = Path.Combine($"{tempPath}\\{back}.{format.ToString().ToLower()}");
+        VersoPath = Path.Combine($"{tempPath}\\{back}.{format.ToString().ToLower()}");
 
         string fileName = await GerarNomeArquivo();
         PdfController pdf = new(tempPath, fileName);
-        pdf.GerarPDF(frotPath, backPath);
+        PdfPath = pdf.GerarPDF(FrentePath, VersoPath);
     }
 
     private async Task PdfSimples()
     {
         string front = await GerarNomeArquivoAsync(true);
-        var frotPath = Path.Combine($"{tempPath}\\{front}.{format.ToString().ToLower()}");
+        FrentePath = Path.Combine($"{tempPath}\\{front}.{format.ToString().ToLower()}");
 
         string fileName = await GerarNomeArquivo();
         PdfController pdf = new(tempPath, fileName);
-        pdf.GerarPDF(frotPath);
+        PdfPath = pdf.GerarPDF(FrentePath);
     }
 
     private void CleanupTwain()
@@ -311,8 +393,9 @@ public partial class SacneamentoDocs : Form
             btnNovoScan.Enabled = true;
         }
     }
-    private void SacneamentoDocs_Load(object sender, EventArgs e)
+    private async void SacneamentoDocs_LoadAsync(object sender, EventArgs e)
     {
+        await AddTipoDocComboBox();
         ListarScanners();
     }
 
@@ -351,10 +434,9 @@ public partial class SacneamentoDocs : Form
         {
             HttpClient httpClient = new HttpClient();
             //Add the bearer authorization header
-            string bearerToken = Constants.HeaderToken;
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AppToken);
             //Add the token
-            httpClient.DefaultRequestHeaders.Add("token", Constants.HeaderToken);
+            httpClient.DefaultRequestHeaders.Add("token", AppToken);
 
             TipoDocumentoController tipoDocumento = new TipoDocumentoController(httpClient);
             List<TipoDocumentoModel> tipoDocumentosResponse = await tipoDocumento.GetTiposDocumentos<TipoDocumentoModel>();
@@ -394,16 +476,16 @@ public partial class SacneamentoDocs : Form
         {
             HttpClient httpClient = new HttpClient();
             //Add the bearer authorization header
-            string bearerToken = Constants.HeaderToken;
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AppToken);
             //Add the token
-            httpClient.DefaultRequestHeaders.Add("token", Constants.HeaderToken);
+            httpClient.DefaultRequestHeaders.Add("token", AppToken);
 
             PedidoExameController pedidoExame = new PedidoExameController(httpClient);
             RetornoPedidoExame retornoPedidoExames = await pedidoExame.GetPedidosExames<RetornoPedidoExame>(Int32.Parse(numeroAtendimento.Text));
 
             if (retornoPedidoExames.TipoArquivo != null)
             {
+                NomePaciente = retornoPedidoExames.PedidoExame.Registro.Paciente.Name;
                 var arquivo = retornoPedidoExames.TipoArquivo.FirstOrDefault(a => a.CodeDominio == tipoDocCb.SelectedValue.ToString());
                 if (arquivo != null)
                     return Int32.Parse(arquivo?.LastNumber);
