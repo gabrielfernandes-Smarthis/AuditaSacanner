@@ -6,6 +6,7 @@ public class LoginModel
     public int ErrorCode { get; set; }
     [JsonProperty("message")]
     public string Message { get; set; }
+
     [JsonProperty("id")]
     public int Id { get; set; }
 
@@ -36,8 +37,8 @@ public class LoginModel
     [JsonProperty("avatar")]
     public object Avatar { get; set; }
 
-    [JsonProperty("company")]
-    public CompanyModel Company { get; set; }
+    [JsonProperty("companies")]
+    public List<CompaniesModel> Companies { get; set; }
 
     [JsonProperty("perfil")]
     public PerfilModel Perfil { get; set; }

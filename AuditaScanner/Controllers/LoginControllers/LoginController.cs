@@ -19,7 +19,7 @@ public class LoginController : ILoginController
         try
         {
             var content = new StringContent(request, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _httpClient.PostAsync(Constants.PostUrl, content);
+            HttpResponseMessage response = await _httpClient.PostAsync(Constants.LoginUrl, content);
             try
             {
                 response.EnsureSuccessStatusCode();
