@@ -4,5 +4,4 @@ public class RetornoUploadModel
 {
     public int CodeErro { get; set; }
     public int Count { get; set; }
-    public string Erros { get; set; }
 }
