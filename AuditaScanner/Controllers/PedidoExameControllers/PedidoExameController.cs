@@ -12,11 +12,11 @@ public class PedidoExameController : IPedidoExameController
         _httpClient = httpClient;
     }
 
-    public async Task<TResponse> GetPedidosExames<TResponse>(int idpedido)
+    public async Task<TResponse> GetPedidosExames<TResponse>(int idpedido, string TipoPedidoExame)
     {
         try
         {
-            HttpResponseMessage response = await _httpClient.GetAsync(Constants.GetPedidoExame + idpedido);
+            HttpResponseMessage response = await _httpClient.GetAsync(Constants.GetPedidoExame + idpedido + $"/{TipoPedidoExame}");
             try
             {
                 response.EnsureSuccessStatusCode();
@@ -27,6 +27,7 @@ public class PedidoExameController : IPedidoExameController
             }
 
             string jsonResponse = await response.Content.ReadAsStringAsync();
+            await Console.Out.WriteLineAsync(jsonResponse);
             return JsonConvert.DeserializeObject<TResponse>(jsonResponse);
         }
         catch (Exception e)

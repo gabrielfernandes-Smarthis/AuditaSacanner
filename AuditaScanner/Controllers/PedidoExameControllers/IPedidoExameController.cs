@@ -4,5 +4,5 @@ namespace AuditaScanner.Controllers.PedidoExameControllers;
 
 public interface IPedidoExameController
 {
-    Task<TResponse> GetPedidosExames<TResponse>(int idpedido);
+    Task<TResponse> GetPedidosExames<TResponse>(int idpedido, string TipoPedidoExame);
 }

@@ -12,6 +12,8 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Windows.Forms;
+using System.Diagnostics;
+using NTwain.Triplets;
 
 public partial class SacneamentoDocs : Form
 {
@@ -41,8 +43,10 @@ public partial class SacneamentoDocs : Form
 
     private bool isPdf = false;
 
+    private DataSource _selectedSource;
     ImageCodecInfo _tiffCodecInfo;
     TwainSession _twain;
+
 
     bool _stopScan;
 
@@ -151,35 +155,36 @@ public partial class SacneamentoDocs : Form
                     {
                         tempPath = localTemp.Text;
 
+                        switch (comboBox1.SelectedIndex)
+                        {
+                            case 0:
+                                isPdf = true;
+                                format = ImageFormat.Png;
+                                break;
+                            case 1:
+                                format = ImageFormat.Jpeg;
+                                break;
+                            case 2:
+                                format = ImageFormat.Bmp;
+                                break;
+                            case 3:
+                                format = ImageFormat.Gif;
+                                break;
+                            case 4:
+                                format = ImageFormat.Tiff;
+                                break;
+                            case 5:
+                                format = ImageFormat.Png;
+                                break;
+                            default:
+                                break;
+                        }
+
                         foreach (var img in images)
                         {
                             string fileName = await GerarNomeArquivoAsync(_currentPage % 2 == 0);
                             _currentPage++;
 
-                            switch (comboBox1.SelectedIndex)
-                            {
-                                case 0:
-                                    isPdf = true;
-                                    format = ImageFormat.Png;
-                                    break;
-                                case 1:
-                                    format = ImageFormat.Jpeg;
-                                    break;
-                                case 2:
-                                    format = ImageFormat.Bmp;
-                                    break;
-                                case 3:
-                                    format = ImageFormat.Gif;
-                                    break;
-                                case 4:
-                                    format = ImageFormat.Tiff;
-                                    break;
-                                case 5:
-                                    format = ImageFormat.Png;
-                                    break;
-                                default:
-                                    break;
-                            }
                             if (format == null && !isPdf)
                             {
                                 MessageBox.Show("Formato de imagem não selecionado. O escaneamento será interrompido.", "Formato inválido", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -386,13 +391,9 @@ public partial class SacneamentoDocs : Form
 
         if (_twain.State == 4) { _twain.CurrentSource.Close(); }
 
-        var selectedSource = _twain.FirstOrDefault(src => src.Name == scannerName);
-
-        if (selectedSource != null && selectedSource.Open() == ReturnCode.Success)
-        {
-            btnNovoScan.Enabled = true;
-        }
+        _selectedSource = _twain.FirstOrDefault(src => src.Name == scannerName);
     }
+
     private async void SacneamentoDocs_LoadAsync(object sender, EventArgs e)
     {
         await AddTipoDocComboBox();
@@ -424,6 +425,31 @@ public partial class SacneamentoDocs : Form
             {
                 // Mostrar a interface do usuário do scanner
                 _twain.CurrentSource.Enable(SourceEnableMode.ShowUI, true, this.Handle);
+            }
+        }
+    }
+
+    private void SetupDataSourceAndStartScan()
+    {
+        if (_selectedSource != null)
+        {
+            // Aqui é onde você configura a resolução (DPI)
+            var resCap = _selectedSource.Capabilities.ICapXResolution;
+            if (resCap != null)
+            {
+                var resValue = new TWFix32() { Whole = 300, Fraction = 0 };  // Set 300 DPI
+                var resSetting = new Capability();
+                var resRC = _selectedSource.Capabilities.Set(resSetting);
+                if (resRC != ReturnCode.Success)
+                {
+                    // Erro ao definir a resolução.
+                    PlatformInfo.Current.Log.Error("Erro ao definir a resolução: " + resRC);
+                }
+            }
+
+            if (_selectedSource != null && _selectedSource.Open() == ReturnCode.Success)
+            {
+                btnNovoScan.Enabled = true;
             }
         }
     }
@@ -480,8 +506,14 @@ public partial class SacneamentoDocs : Form
             //Add the token
             httpClient.DefaultRequestHeaders.Add("token", AppToken);
 
+            var tipoExame = "";
+            if (rbAtendimento.Checked)
+                tipoExame = "A";
+            else
+                tipoExame = "P";
+
             PedidoExameController pedidoExame = new PedidoExameController(httpClient);
-            RetornoPedidoExame retornoPedidoExames = await pedidoExame.GetPedidosExames<RetornoPedidoExame>(Int32.Parse(numeroAtendimento.Text));
+            RetornoPedidoExame retornoPedidoExames = await pedidoExame.GetPedidosExames<RetornoPedidoExame>(Int32.Parse(numeroAtendimento.Text), tipoExame);
 
             if (retornoPedidoExames.TipoArquivo != null)
             {

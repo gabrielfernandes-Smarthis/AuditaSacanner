@@ -34,7 +34,7 @@ public class UploadController : IUploadController
         }
         catch (Exception e)
         {
-            throw new Exception("Erro ao efetuar o login" + e.Message);
+            throw new Exception("Erro ao se comunicar com endpoint upload: \n" + e.Message);
         }
     }
 }

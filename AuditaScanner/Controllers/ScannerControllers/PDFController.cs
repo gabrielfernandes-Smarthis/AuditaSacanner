@@ -35,8 +35,7 @@ public class PdfController
         string pdfPath = _path + "\\" + _name + ".pdf";
         _pdfWriter = new PdfWriter(pdfPath);
         _doc = new Document(new PdfDocument(_pdfWriter));
-        AdicionarImagem(frentePath);
-        AdicionarImagem(trasPath);
+        AdicionarImagem(frentePath, trasPath);
         _doc.Close();
         return pdfPath;
     }
@@ -48,6 +47,20 @@ public class PdfController
         img.SetHorizontalAlignment(HorizontalAlignment.CENTER);
         img.SetAutoScale(true);
         _doc.Add(img);
+    }
+
+    public void AdicionarImagem(string frente, string tras)
+    {
+        ImageData imageData = ImageDataFactory.Create(frente);
+        Image img = new Image(imageData);
+        img.SetHorizontalAlignment(HorizontalAlignment.CENTER);
+        img.SetAutoScale(true);
+        _doc.Add(img);
         _doc.Add(new AreaBreak());
+        imageData = ImageDataFactory.Create(tras);
+        img = new Image(imageData);
+        img.SetHorizontalAlignment(HorizontalAlignment.CENTER);
+        img.SetAutoScale(true);
+        _doc.Add(img);
     }
 }
