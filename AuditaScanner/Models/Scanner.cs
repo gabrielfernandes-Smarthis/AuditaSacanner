@@ -1,6 +1,6 @@
 ﻿namespace AuditaScanner.Models;
 
-internal class Scanner
+public class Scanner
 {
     const string WIA_SCAN_COLOR_MODE = "6146";
     const string WIA_HORIZONTAL_SCAN_RESOLUTION_DPI = "6147";

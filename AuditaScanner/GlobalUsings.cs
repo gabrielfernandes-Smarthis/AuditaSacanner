@@ -5,4 +5,6 @@ global using System.Text;
 global using System.Threading.Tasks;
 global using System.Runtime.InteropServices;
 global using WIA;
+global using NTwain;
+global using NTwain.Data;
 global using Newtonsoft.Json;

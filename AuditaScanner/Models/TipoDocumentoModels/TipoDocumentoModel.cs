@@ -7,4 +7,6 @@ public class TipoDocumentoModel
 
     [JsonProperty("name")]
     public string Nome { get; set; }
+    [JsonProperty("codeDominio")]
+    public string CodigoDominio { get; set; }
 }
