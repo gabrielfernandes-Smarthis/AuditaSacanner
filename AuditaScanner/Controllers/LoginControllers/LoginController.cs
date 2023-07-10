@@ -29,6 +29,8 @@ public class LoginController : ILoginController
                 throw new Exception("Erro na resposta HTTP: " + e.Message);
             }
 
+            string jsonResponse = await response.Content.ReadAsStringAsync();
+            await Console.Out.WriteLineAsync(jsonResponse);
             return await response.Content.ReadFromJsonAsync<TResponse>();
         }
         catch (Exception e)

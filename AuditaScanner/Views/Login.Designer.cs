@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Login));
             loginLabel = new Label();
             senhaLabel = new Label();
             auditaLabel = new Label();
@@ -71,9 +72,9 @@
             // loginBtn
             // 
             loginBtn.Font = new Font("Rubik", 14.25F, FontStyle.Regular, GraphicsUnit.Point);
-            loginBtn.Location = new Point(292, 394);
+            loginBtn.Location = new Point(268, 392);
             loginBtn.Name = "loginBtn";
-            loginBtn.Size = new Size(69, 32);
+            loginBtn.Size = new Size(93, 32);
             loginBtn.TabIndex = 3;
             loginBtn.Text = "Logar";
             loginBtn.UseVisualStyleBackColor = true;
@@ -130,9 +131,11 @@
             Controls.Add(prestadoraLabel);
             Controls.Add(senhaLabel);
             Controls.Add(loginLabel);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Login";
-            Text = "Scanner Audita";
+            Text = "Audita Scanner ";
             Load += Login_Load;
+            Shown += Login_Shown;
             ResumeLayout(false);
             PerformLayout();
         }
