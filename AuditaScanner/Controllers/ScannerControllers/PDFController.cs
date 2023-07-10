@@ -42,7 +42,7 @@ public class PdfController
 
     public void AdicionarImagem(string imagePath)
     {
-        ImageData imageData = ImageDataFactory.Create(imagePath);
+        ImageData imageData = RedimensionarImagem(imagePath, 1000, 1424);
         Image img = new Image(imageData);
         img.SetHorizontalAlignment(HorizontalAlignment.CENTER);
         img.SetAutoScale(true);
@@ -51,16 +51,44 @@ public class PdfController
 
     public void AdicionarImagem(string frente, string tras)
     {
-        ImageData imageData = ImageDataFactory.Create(frente);
+        ImageData imageData = RedimensionarImagem(frente, 1000, 1424);
         Image img = new Image(imageData);
         img.SetHorizontalAlignment(HorizontalAlignment.CENTER);
         img.SetAutoScale(true);
         _doc.Add(img);
         _doc.Add(new AreaBreak());
-        imageData = ImageDataFactory.Create(tras);
+        imageData = RedimensionarImagem(frente, 1000, 1424);
         img = new Image(imageData);
         img.SetHorizontalAlignment(HorizontalAlignment.CENTER);
         img.SetAutoScale(true);
         _doc.Add(img);
     }
+
+    public ImageData RedimensionarImagem(string imagePath, int maxWidth, int maxHeight)
+    {
+        using (var image = System.Drawing.Image.FromFile(imagePath))
+        {
+            var ratioX = (double)maxWidth / image.Width;
+            var ratioY = (double)maxHeight / image.Height;
+            var ratio = Math.Min(ratioX, ratioY);
+
+            var newWidth = (int)(image.Width * ratio);
+            var newHeight = (int)(image.Height * ratio);
+
+            var newImage = new Bitmap(newWidth, newHeight);
+
+            using (var graphics = Graphics.FromImage(newImage))
+            {
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                graphics.DrawImage(image, 0, 0, newWidth, newHeight);
+            }
+
+            var ms = new MemoryStream();
+            newImage.Save(ms, image.RawFormat);
+            return ImageDataFactory.Create(ms.ToArray());
+        }
+    }
+
 }

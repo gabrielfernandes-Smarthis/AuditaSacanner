@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SacneamentoDocs));
             visualizarScan = new PictureBox();
             groupBox1 = new GroupBox();
             rbPedido = new RadioButton();
@@ -117,10 +118,10 @@
             // chkDuplex
             // 
             chkDuplex.AutoSize = true;
-            chkDuplex.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            chkDuplex.Location = new Point(393, 181);
+            chkDuplex.Font = new Font("Rubik", 9.75F, FontStyle.Bold, GraphicsUnit.Point);
+            chkDuplex.Location = new Point(387, 274);
             chkDuplex.Name = "chkDuplex";
-            chkDuplex.Size = new Size(68, 19);
+            chkDuplex.Size = new Size(71, 19);
             chkDuplex.TabIndex = 6;
             chkDuplex.Text = "Duplex";
             chkDuplex.UseVisualStyleBackColor = true;
@@ -130,7 +131,7 @@
             comboBox1.Font = new Font("Rubik", 12F, FontStyle.Regular, GraphicsUnit.Point);
             comboBox1.FormattingEnabled = true;
             comboBox1.Items.AddRange(new object[] { "PDF", "JPEG", "BMP", "GIF", "TIFF", "PNG" });
-            comboBox1.Location = new Point(231, 178);
+            comboBox1.Location = new Point(231, 271);
             comboBox1.Name = "comboBox1";
             comboBox1.Size = new Size(151, 27);
             comboBox1.TabIndex = 5;
@@ -139,7 +140,7 @@
             // 
             tipoDocCb.Font = new Font("Rubik", 12F, FontStyle.Regular, GraphicsUnit.Point);
             tipoDocCb.FormattingEnabled = true;
-            tipoDocCb.Location = new Point(22, 178);
+            tipoDocCb.Location = new Point(22, 271);
             tipoDocCb.Name = "tipoDocCb";
             tipoDocCb.Size = new Size(191, 27);
             tipoDocCb.TabIndex = 5;
@@ -180,7 +181,7 @@
             // nomeArquivo
             // 
             nomeArquivo.Font = new Font("Rubik", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            nomeArquivo.Location = new Point(217, 276);
+            nomeArquivo.Location = new Point(217, 181);
             nomeArquivo.Name = "nomeArquivo";
             nomeArquivo.ReadOnly = true;
             nomeArquivo.Size = new Size(239, 26);
@@ -197,7 +198,7 @@
             // numeroAtendimento
             // 
             numeroAtendimento.Font = new Font("Rubik", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            numeroAtendimento.Location = new Point(22, 276);
+            numeroAtendimento.Location = new Point(22, 181);
             numeroAtendimento.Name = "numeroAtendimento";
             numeroAtendimento.Size = new Size(170, 26);
             numeroAtendimento.TabIndex = 2;
@@ -226,7 +227,7 @@
             // 
             label3.AutoSize = true;
             label3.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            label3.Location = new Point(217, 258);
+            label3.Location = new Point(217, 163);
             label3.Name = "label3";
             label3.Size = new Size(114, 15);
             label3.TabIndex = 0;
@@ -236,7 +237,7 @@
             // 
             label7.AutoSize = true;
             label7.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            label7.Location = new Point(228, 160);
+            label7.Location = new Point(228, 253);
             label7.Name = "label7";
             label7.Size = new Size(63, 15);
             label7.TabIndex = 0;
@@ -246,7 +247,7 @@
             // 
             label5.AutoSize = true;
             label5.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            label5.Location = new Point(22, 160);
+            label5.Location = new Point(22, 253);
             label5.Name = "label5";
             label5.Size = new Size(129, 15);
             label5.TabIndex = 0;
@@ -266,11 +267,11 @@
             // 
             label2.AutoSize = true;
             label2.Font = new Font("Rubik", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
-            label2.Location = new Point(22, 258);
+            label2.Location = new Point(22, 163);
             label2.Name = "label2";
-            label2.Size = new Size(142, 15);
+            label2.Size = new Size(92, 15);
             label2.TabIndex = 0;
-            label2.Text = "Numero Atendimento:";
+            label2.Text = "Número do Id:";
             // 
             // label1
             // 
@@ -301,8 +302,9 @@
             Controls.Add(vScrollBar1);
             Controls.Add(groupBox1);
             Controls.Add(visualizarScan);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "SacneamentoDocs";
-            Text = "Scanner Audita";
+            Text = "Audita Scanner ";
             FormClosed += SacneamentoDocs_FormClosed;
             Load += SacneamentoDocs_LoadAsync;
             ((System.ComponentModel.ISupportInitialize)visualizarScan).EndInit();

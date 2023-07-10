@@ -1,9 +1,6 @@
 using AuditaScanner.Controllers.LoginControllers;
-using AuditaScanner.Controllers.PrestadoraControllers;
 using AuditaScanner.Models.LoginModels;
-using AuditaScanner.Models.PrestadoraModels;
 using AuditaScanner.Views;
-using Microsoft.VisualBasic.Logging;
 using System.Net.Http.Headers;
 
 namespace AuditaScanner;
@@ -20,6 +17,7 @@ public partial class Login : Form
     {
         InitializeComponent();
 
+        loginTxt.Select();
         CenterControl(loginTxt);
         int X = loginTxt.Location.X;
         int Y = loginTxt.Location.Y;
@@ -94,7 +92,7 @@ public partial class Login : Form
 
             //Check if the CPF or CNPJ is valid
             if (login.ValidarCpf(cpf))
-               await EfetuarLogin(cpf, login);
+                await EfetuarLogin(cpf, login);
             else if (!login.ValidarCpf(cpf))
                 MessageBox.Show("Cpf invalido");
             else
@@ -152,6 +150,11 @@ public partial class Login : Form
     }
 
     private void Login_Load(object sender, EventArgs e)
+    {
+        loginTxt.Focus();
+    }
+
+    private void Login_Shown(object sender, EventArgs e)
     {
         loginTxt.Focus();
     }

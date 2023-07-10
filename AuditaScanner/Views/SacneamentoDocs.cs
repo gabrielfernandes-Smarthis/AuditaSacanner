@@ -69,13 +69,15 @@ public partial class SacneamentoDocs : Form
             if (enc.MimeType == "image/tiff") { _tiffCodecInfo = enc; break; }
         }
 
-        numeroAtendimento.LostFocus += IdEntered;
+        tipoDocCb.LostFocus += IdEntered;
 
         SetupTwain();
         btnNovoScan.Enabled = false;
 
         vScrollBar1.Enabled = false;
 
+        rbPedido.Select();
+        comboBox1.SelectedIndex = 0;
         localTemp.Text = "C:\\Temp\\AuditaScanner";
 
         vScrollBar1.ValueChanged += vScrollBar1_ValueChanged;
@@ -228,7 +230,7 @@ public partial class SacneamentoDocs : Form
                 btnNovoScan.Enabled = true;
 
                 var extensao = Path.GetExtension(PdfPath);
-                var nomeArquivo = Path.GetFileNameWithoutExtension(PdfPath);
+                var noArquivo = Path.GetFileNameWithoutExtension(PdfPath);
                 var base64 = FileToBase64(PdfPath);
                 UploadBodyModel uploadBody = new UploadBodyModel
                 {
@@ -238,7 +240,7 @@ public partial class SacneamentoDocs : Form
                         {
                             Extension = extensao,
                             FileHash = base64,
-                            Name = nomeArquivo,
+                            Name = noArquivo + extensao,
                             PedidoExameId = Int32.Parse(numeroAtendimento.Text),
                             ProcedureId = null,
                             AtendimentoId = null,
@@ -265,6 +267,14 @@ public partial class SacneamentoDocs : Form
 
                     File.Delete(FrentePath);
                     File.Delete(PdfPath);
+
+                    numeroAtendimento.Clear();
+                    NomePaciente = string.Empty;
+                    nomeArquivo.Clear();
+                    chkDuplex.Checked = false;
+                    comboBox1.SelectedIndex = 0;
+
+                    MessageBox.Show("Arquivos enviados com sucesso", "Sucesso", MessageBoxButtons.OK);
                 }
                 else
                 {
@@ -392,6 +402,11 @@ public partial class SacneamentoDocs : Form
         if (_twain.State == 4) { _twain.CurrentSource.Close(); }
 
         _selectedSource = _twain.FirstOrDefault(src => src.Name == scannerName);
+
+        if (_selectedSource != null && _selectedSource.Open() == ReturnCode.Success && nomeArquivo.Text != "")
+        {
+            btnNovoScan.Enabled = true;
+        }
     }
 
     private async void SacneamentoDocs_LoadAsync(object sender, EventArgs e)
@@ -412,7 +427,7 @@ public partial class SacneamentoDocs : Form
             if (_twain.CurrentSource.Capabilities.CapDuplex.IsSupported && chkDuplex.Checked)
             {
                 _twain.CurrentSource.Capabilities.CapDuplexEnabled.SetValue(BoolType.True);
-                var ativou = _twain.CurrentSource.Capabilities.CapDuplexEnabled.GetCurrent();
+                _twain.CurrentSource.Capabilities.CapDuplexEnabled.GetCurrent();
             }
             _stopScan = false;
 
@@ -426,31 +441,7 @@ public partial class SacneamentoDocs : Form
                 // Mostrar a interface do usuário do scanner
                 _twain.CurrentSource.Enable(SourceEnableMode.ShowUI, true, this.Handle);
             }
-        }
-    }
 
-    private void SetupDataSourceAndStartScan()
-    {
-        if (_selectedSource != null)
-        {
-            // Aqui é onde você configura a resolução (DPI)
-            var resCap = _selectedSource.Capabilities.ICapXResolution;
-            if (resCap != null)
-            {
-                var resValue = new TWFix32() { Whole = 300, Fraction = 0 };  // Set 300 DPI
-                var resSetting = new Capability();
-                var resRC = _selectedSource.Capabilities.Set(resSetting);
-                if (resRC != ReturnCode.Success)
-                {
-                    // Erro ao definir a resolução.
-                    PlatformInfo.Current.Log.Error("Erro ao definir a resolução: " + resRC);
-                }
-            }
-
-            if (_selectedSource != null && _selectedSource.Open() == ReturnCode.Success)
-            {
-                btnNovoScan.Enabled = true;
-            }
         }
     }
 
@@ -491,6 +482,8 @@ public partial class SacneamentoDocs : Form
     private async Task<string> GerarNomeArquivo()
     {
         int LastNumber = await PedidoExameRequest();
+        if (LastNumber == -1)
+            return "";
 
         string NomeArquivo = $"{numeroAtendimento.Text}-{tipoDocCb.SelectedValue.ToString()}-{LastNumber + 1}";
         return NomeArquivo;
@@ -515,9 +508,22 @@ public partial class SacneamentoDocs : Form
             PedidoExameController pedidoExame = new PedidoExameController(httpClient);
             RetornoPedidoExame retornoPedidoExames = await pedidoExame.GetPedidosExames<RetornoPedidoExame>(Int32.Parse(numeroAtendimento.Text), tipoExame);
 
+
             if (retornoPedidoExames.TipoArquivo != null)
             {
-                NomePaciente = retornoPedidoExames.PedidoExame.Registro.Paciente.Name;
+                try
+                {
+                    if (retornoPedidoExames?.PedidoExame?.Registro?.Paciente != null)
+                        NomePaciente = retornoPedidoExames.PedidoExame.Registro.Paciente.Name;
+                    else
+                        throw new Exception("Registro ou Paciente é nulo");
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Não há pedido com o ID digitado", "Erro ao buscar pedido", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return -1;
+                }
+
                 var arquivo = retornoPedidoExames.TipoArquivo.FirstOrDefault(a => a.CodeDominio == tipoDocCb.SelectedValue.ToString());
                 if (arquivo != null)
                     return Int32.Parse(arquivo?.LastNumber);
@@ -552,6 +558,8 @@ public partial class SacneamentoDocs : Form
     private async Task<string> GerarNomeArquivoAsync(bool isFront)
     {
         int LastNumber = await PedidoExameRequest();
+        if (LastNumber == -1)
+            return "";
 
         string NomeArquivo = $"{numeroAtendimento.Text}-{tipoDocCb.SelectedValue.ToString()}-{LastNumber + 1}";
         if (chkDuplex.Checked)
