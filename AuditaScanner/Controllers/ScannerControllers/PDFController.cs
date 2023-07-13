@@ -9,6 +9,7 @@ namespace AuditaScanner.Controllers.ScannerControllers;
 
 public class PdfController
 {
+    private const string V = "\\";
     private readonly string _path;
     private readonly string _name;
     private Document _doc;
@@ -22,7 +23,7 @@ public class PdfController
 
     public string GerarPDF(string imagePath)
     {
-        string pdfPath = _path + "\\" + _name + ".pdf";
+        string pdfPath = _path + V + _name + ".pdf";
         _pdfWriter = new PdfWriter(pdfPath);
         _doc = new Document(new PdfDocument(_pdfWriter));
         AdicionarImagem(imagePath);
@@ -32,7 +33,7 @@ public class PdfController
 
     public string GerarPDF(string frentePath, string trasPath)
     {
-        string pdfPath = _path + "\\" + _name + ".pdf";
+        string pdfPath = _path + V + _name + ".pdf";
         _pdfWriter = new PdfWriter(pdfPath);
         _doc = new Document(new PdfDocument(_pdfWriter));
         AdicionarImagem(frentePath, trasPath);
