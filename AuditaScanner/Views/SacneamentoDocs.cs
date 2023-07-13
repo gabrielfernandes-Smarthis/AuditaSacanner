@@ -12,8 +12,6 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Windows.Forms;
-using System.Diagnostics;
-using NTwain.Triplets;
 
 public partial class SacneamentoDocs : Form
 {
@@ -26,8 +24,13 @@ public partial class SacneamentoDocs : Form
 
     public string AppToken { get; set; }
 
+    public int id { get; set; }
+    public string nome { get; set; }
+    public string CodeDominio { get; set; }
+
     public List<string> DocNumber { get; set; }
     public List<string> DocCode { get; set; }
+    public List<TipoDocumentoModel> tipoDocumentosResponse;
 
     public string FrentePath { get; set; }
     public string VersoPath { get; set; }
@@ -69,6 +72,7 @@ public partial class SacneamentoDocs : Form
             if (enc.MimeType == "image/tiff") { _tiffCodecInfo = enc; break; }
         }
 
+        numeroAtendimento.LostFocus += OnLostFocus;
         tipoDocCb.LostFocus += IdEntered;
 
         SetupTwain();
@@ -79,6 +83,9 @@ public partial class SacneamentoDocs : Form
         rbPedido.Select();
         comboBox1.SelectedIndex = 0;
         localTemp.Text = "C:\\Temp\\AuditaScanner";
+
+        tipoDocCb.Enabled = false;
+        comboBox1.Enabled = false;
 
         vScrollBar1.ValueChanged += vScrollBar1_ValueChanged;
     }
@@ -221,20 +228,56 @@ public partial class SacneamentoDocs : Form
             PlatformInfo.Current.Log.Info("Source disabled event on thread " + Thread.CurrentThread.ManagedThreadId);
             this.BeginInvoke(new Action(async () =>
             {
-                if (chkDuplex.Checked)
-                    await PdfDuplex();
-                else
-                    await PdfSimples();
+                if (isPdf)
+                {
+                    if (chkDuplex.Checked)
+                        await PdfDuplex();
+                    else
+                        await PdfSimples(); 
+                }
 
                 _currentPage = 0;
                 btnNovoScan.Enabled = true;
 
-                var extensao = Path.GetExtension(PdfPath);
-                var noArquivo = Path.GetFileNameWithoutExtension(PdfPath);
-                var base64 = FileToBase64(PdfPath);
-                UploadBodyModel uploadBody = new UploadBodyModel
-                {
-                    Files = new List<FileModel>
+                await UploadArquivos();
+            }));
+        };
+        _twain.TransferReady += (s, e) =>
+        {
+            PlatformInfo.Current.Log.Info("Transferr ready event on thread " + Thread.CurrentThread.ManagedThreadId);
+            e.CancelAll = _stopScan;
+        };
+
+        PlatformInfo.Current.Log.Info("Setup thread = " + Thread.CurrentThread.ManagedThreadId);
+        _twain.SynchronizationContext = SynchronizationContext.Current;
+        if (_twain.State < 3)
+        {
+            _twain.Open();
+            // use this to hook into current app loop
+            //_twain.Open(new WindowsFormsMessageLoopHook(this.Handle));
+        }
+    }
+
+    private async Task UploadArquivos()
+    {
+        string extensao;
+        string noArquivo;
+        string base64;
+        if (isPdf)
+        {
+            extensao = Path.GetExtension(PdfPath);
+            noArquivo = Path.GetFileNameWithoutExtension(PdfPath);
+            base64 = FileToBase64(PdfPath);
+        }
+        else
+        {
+            extensao = Path.GetExtension(path);
+            noArquivo = Path.GetFileNameWithoutExtension(path);
+            base64 = FileToBase64(path);
+        }
+        UploadBodyModel uploadBody = new UploadBodyModel
+        {
+            Files = new List<FileModel>
                     {
                         new FileModel
                         {
@@ -244,60 +287,50 @@ public partial class SacneamentoDocs : Form
                             PedidoExameId = Int32.Parse(numeroAtendimento.Text),
                             ProcedureId = null,
                             AtendimentoId = null,
-                            FileTypeId = 1,
+                            FileTypeId = id,
                             Paciente = NomePaciente
                         }
                     },
-                    Sender = new SenderModel
-                    {
-                        Cpf = UserCpf,
-                        Email = UserEmail,
-                        Name = UserName,
-                        Nickname = UserNickname,
-                        Password = UserPassword
-                    }
-                };
-
-                UploadArquivos upload = new UploadArquivos(uploadBody, AppToken);
-
-                if (await upload.UploadArquivo())
-                {
-                    if (chkDuplex.Checked)
-                        File.Delete(VersoPath);
-
-                    File.Delete(FrentePath);
-                    File.Delete(PdfPath);
-
-                    numeroAtendimento.Clear();
-                    NomePaciente = string.Empty;
-                    nomeArquivo.Clear();
-                    chkDuplex.Checked = false;
-                    comboBox1.SelectedIndex = 0;
-
-                    MessageBox.Show("Arquivos enviados com sucesso", "Sucesso", MessageBoxButtons.OK);
-                }
-                else
-                {
-                    MessageBox.Show("Erro ao enviar arquivo para o servidor. Tente novamente.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }));
-        };
-        _twain.TransferReady += (s, e) =>
-        {
-            PlatformInfo.Current.Log.Info("Transferr ready event on thread " + Thread.CurrentThread.ManagedThreadId);
-            e.CancelAll = _stopScan;
+            Sender = new SenderModel
+            {
+                Cpf = UserCpf,
+                Email = UserEmail,
+                Name = UserName,
+                Nickname = UserNickname,
+                Password = UserPassword
+            }
         };
 
-        // either set sync context and don't worry about threads during events,
-        // or don't and use control.invoke during the events yourself
-        PlatformInfo.Current.Log.Info("Setup thread = " + Thread.CurrentThread.ManagedThreadId);
-        _twain.SynchronizationContext = SynchronizationContext.Current;
-        if (_twain.State < 3)
+        UploadArquivos upload = new UploadArquivos(uploadBody, AppToken);
+
+        if (await upload.UploadArquivo())
         {
-            // use this for internal msg loop
-            _twain.Open();
-            // use this to hook into current app loop
-            //_twain.Open(new WindowsFormsMessageLoopHook(this.Handle));
+            if (chkDuplex.Checked)
+                File.Delete(VersoPath);
+
+            if (isPdf)
+            {
+                File.Delete(FrentePath);
+                File.Delete(PdfPath);
+            }
+            else
+                File.Delete(path);
+
+
+            numeroAtendimento.Clear();
+            NomePaciente = string.Empty;
+            nomeArquivo.Clear();
+            chkDuplex.Checked = false;
+            comboBox1.SelectedIndex = 0;
+
+            tipoDocCb.Enabled = false;
+            comboBox1.Enabled = false;
+
+            MessageBox.Show("Arquivos enviados com sucesso", "Sucesso", MessageBoxButtons.OK);
+        }
+        else
+        {
+            MessageBox.Show("Erro ao enviar arquivo para o servidor. Tente novamente.", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -456,11 +489,13 @@ public partial class SacneamentoDocs : Form
             httpClient.DefaultRequestHeaders.Add("token", AppToken);
 
             TipoDocumentoController tipoDocumento = new TipoDocumentoController(httpClient);
-            List<TipoDocumentoModel> tipoDocumentosResponse = await tipoDocumento.GetTiposDocumentos<TipoDocumentoModel>();
+            tipoDocumentosResponse = await tipoDocumento.GetTiposDocumentos<TipoDocumentoModel>();
 
             tipoDocCb.DataSource = tipoDocumentosResponse;
             tipoDocCb.DisplayMember = "Nome";
             tipoDocCb.ValueMember = "CodigoDominio";
+
+            this.tipoDocCb.SelectedIndexChanged += new System.EventHandler(this.tipoDocCb_SelectedIndexChanged);
         }
         catch (HttpRequestException ex)
         {
@@ -477,6 +512,15 @@ public partial class SacneamentoDocs : Form
             // Handle any other exception
             MessageBox.Show("Ocorreu um erro inesperado. Por favor, tente novamente.");
         }
+    }
+
+    private void tipoDocCb_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        TipoDocumentoModel selectedTipoDocumento = (TipoDocumentoModel)tipoDocCb.SelectedItem;
+
+        id = selectedTipoDocumento.Id;
+        nome = selectedTipoDocumento.Nome;
+        CodeDominio = selectedTipoDocumento.CodigoDominio;
     }
 
     private async Task<string> GerarNomeArquivo()
@@ -572,8 +616,14 @@ public partial class SacneamentoDocs : Form
         return NomeArquivo;
     }
 
+    private void OnLostFocus(object sender, EventArgs e)
+    {
+        tipoDocCb.Enabled = true;
+    }
+
     private async void IdEntered(object sender, EventArgs e)
     {
+        comboBox1.Enabled = true;
         nomeArquivo.Text = await GerarNomeArquivo();
     }
 

@@ -1,8 +1,4 @@
-﻿using AuditaScanner.Models;
-using AuditaScanner.Models.UploadModels;
-using Refit;
-using System.Net.Http.Json;
-using System.Security.Cryptography;
+﻿using System.Net.Http.Json;
 
 namespace AuditaScanner.Controllers.UploadArquivosControllers;
 
@@ -30,6 +26,8 @@ public class UploadController : IUploadController
                 throw new Exception("Erro na resposta HTTP: " + e.Message);
             }
 
+            string jsonResponse = await response.Content.ReadAsStringAsync();
+            await Console.Out.WriteLineAsync(jsonResponse);
             return await response.Content.ReadFromJsonAsync<TResponse>();
         }
         catch (Exception e)
